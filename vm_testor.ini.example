@@ -1,0 +1,22 @@
+; Configuration du Mini VM-Testor : remplissez les valeurs, puis relancez le script.
+; Ce fichier contient vos mots de passe : ne le partagez pas.
+
+[ssh]
+; VirtualBox en NAT : 127.0.0.1. Mode pont ou VMware : IP de la VM (commande ip a)
+hote = 127.0.0.1
+; VirtualBox en NAT : port de l'hôte redirigé vers le 22 de la VM. Sinon : 22
+port = 2222
+; secondes d'attente maximale pour joindre la VM
+delai = 10
+
+[comptes]
+; prénom imposé par l'énoncé pour le nom d'hôte et le premier compte, en minuscules
+prenom = prenom
+; login du premier compte, celui créé à l'installation d'Ubuntu
+login = prenom
+mot_de_passe = CHANGEZ_MOI
+mot_de_passe_fernand = CHANGEZ_MOI
+
+[equipe]
+; oui si l'équipe compte trois membres (teste aussi le programme phare, M23)
+trinome = non

@@ -17,34 +17,7 @@ La bibliothèque `paramiko` est installée automatiquement au premier lancement 
 
 ## Utilisation
 
-1. Ouvrez `vm_testor.py` et remplissez la section **Configuration**, tout en haut du fichier. Par exemple, pour une VM VirtualBox en NAT dont le premier compte est `mathieu` :
-
-   ```python
-   HOST = "127.0.0.1"
-   PORT = 2222
-   CONNECT_TIMEOUT = 10
-
-   FIRST_NAME = "mathieu"
-   MAIN_USER = "mathieu"
-   MAIN_PASSWORD = "mot_de_passe_de_mathieu"
-   FERNAND_PASSWORD = "mot_de_passe_de_fernand"
-
-   TEAM_OF_THREE = False
-   ```
-
-   | Paramètre | Rôle |
-   |---|---|
-   | `HOST`, `PORT` | Adresse et port SSH de la VM (voir « Connexion SSH à la VM ») |
-   | `CONNECT_TIMEOUT` | Délai maximal de connexion, en secondes |
-   | `FIRST_NAME` | Le prénom imposé par l'énoncé, en minuscules |
-   | `MAIN_USER` | Le login du premier compte, créé à l'installation d'Ubuntu |
-   | `MAIN_PASSWORD` | Le mot de passe de ce premier compte |
-   | `FERNAND_PASSWORD` | Le mot de passe du compte `fernand` |
-   | `TEAM_OF_THREE` | `True` si votre équipe compte trois membres (teste aussi `phare`) |
-
-   Tant que ces valeurs ne sont pas remplies, le script refuse de se lancer et vous le rappelle.
-
-2. Lancez le script :
+1. Lancez une première fois le script :
 
    ```
    python vm_testor.py
@@ -52,12 +25,50 @@ La bibliothèque `paramiko` est installée automatiquement au premier lancement 
 
    (sous macOS et Linux, la commande est souvent `python3`)
 
+   Il crée votre fichier `vm_testor.ini` en copiant le modèle `vm_testor.ini.example`, puis s'arrête. (Vous pouvez aussi faire cette copie vous-même.)
+
+2. Ouvrez `vm_testor.ini` avec un éditeur de texte et remplissez-le. Chaque valeur y est expliquée en commentaire. Par exemple, pour une VM VirtualBox en NAT dont le premier compte est `mathieu` :
+
+   ```ini
+   [ssh]
+   hote = 127.0.0.1
+   port = 2222
+   delai = 10
+
+   [comptes]
+   prenom = mathieu
+   login = mathieu
+   mot_de_passe = mot_de_passe_de_mathieu
+   mot_de_passe_fernand = mot_de_passe_de_fernand
+
+   [equipe]
+   trinome = non
+   ```
+
+   | Clé | Rôle |
+   |---|---|
+   | `hote`, `port` | Adresse et port SSH de la VM (voir « Connexion SSH à la VM ») |
+   | `delai` | Délai maximal de connexion, en secondes |
+   | `prenom` | Le prénom imposé par l'énoncé |
+   | `login` | Le login du premier compte, créé à l'installation d'Ubuntu |
+   | `mot_de_passe` | Le mot de passe de ce premier compte |
+   | `mot_de_passe_fernand` | Le mot de passe du compte `fernand` |
+   | `trinome` | `oui` si votre équipe compte trois membres (teste aussi `phare`) |
+
+   Tant que les valeurs d'exemple (`prenom`, `CHANGEZ_MOI`) ne sont pas remplacées, le script refuse de se lancer et vous le rappelle.
+
+3. Relancez le script :
+
+   ```
+   python vm_testor.py
+   ```
+
 Chaque test affiche `[OK]` ou `[KO]`. En cas d'échec, la sortie obtenue est affichée en dessous pour aider au diagnostic. Le bilan final indique le nombre de tests réussis.
 
 ## Connexion SSH à la VM
 
-- **VirtualBox en mode NAT** (par défaut) : l'adresse de la VM (souvent `10.0.2.15`) n'est pas joignable depuis l'hôte. Ajoutez une règle de redirection de port dans les paramètres réseau de la VM, par exemple port hôte `2222` vers port invité `22`, puis gardez `HOST = "127.0.0.1"` et `PORT = 2222`.
-- **Mode pont ou VMware** : utilisez directement l'adresse IP de la VM (donnée par `ip a`) avec `PORT = 22`.
+- **VirtualBox en mode NAT** (par défaut) : l'adresse de la VM (souvent `10.0.2.15`) n'est pas joignable depuis l'hôte. Ajoutez une règle de redirection de port dans les paramètres réseau de la VM, par exemple port hôte `2222` vers port invité `22`, puis gardez `hote = 127.0.0.1` et `port = 2222` dans `vm_testor.ini`.
+- **Mode pont ou VMware** : utilisez directement l'adresse IP de la VM (donnée par `ip a`) dans `hote`, avec `port = 22`.
 
 ## Ce que le script vérifie
 
@@ -81,9 +92,10 @@ Le script se contente de lire, à une exception près : il relance `rapport.sh`,
 
 | Problème | Solution |
 |---|---|
-| « VM injoignable » | Vérifiez que la VM est démarrée, puis `HOST`, `PORT` et la redirection de port |
-| « Remplissez d'abord la section Configuration » | Remplacez les valeurs `prenom` et `CHANGEZ_MOI` par les vôtres |
-| « Connexion refusée pour… » | `MAIN_USER`, `MAIN_PASSWORD` ou `FERNAND_PASSWORD` incorrect |
+| « VM injoignable » | Vérifiez que la VM est démarrée, puis `hote`, `port` et la redirection de port |
+| « Remplissez d'abord vm_testor.ini » | Remplacez les valeurs `prenom` et `CHANGEZ_MOI` par les vôtres |
+| « Fichier vm_testor.ini invalide » | Corrigez la valeur indiquée, ou supprimez le fichier pour qu'il soit recréé |
+| « Connexion refusée pour… » | `login`, `mot_de_passe` ou `mot_de_passe_fernand` incorrect dans `vm_testor.ini` |
 | `M11` en `[KO]` | Lancez `sudo apt update && sudo apt upgrade` sur la VM |
 | Codes comme `←[92m` à l'affichage | Console trop ancienne : utilisez Windows Terminal |
 | « Installation automatique impossible » | Installez `paramiko` à la main (sous Debian/Ubuntu, le paquet `python3-venv` peut manquer) |
@@ -98,11 +110,11 @@ Chaque test est une ligne de l'une des listes `CHECKS`, `PHARE_CHECKS` ou `SCRIP
 ("Libellé affiché", "compte", "commande à exécuter sur la VM", prédicat),
 ```
 
-- `compte` vaut `"main"` (le premier compte, `MAIN_USER`) ou `"fernand"`
+- `compte` vaut `"main"` (le premier compte, `login` dans `vm_testor.ini`) ou `"fernand"`
 - le prédicat reçoit le code de retour et la sortie de la commande, par exemple `equals("3000")`, `contains("1200")` ou `succeeds`
 
 Pas à l'aise avec Python ? Ouvrez simplement une issue décrivant le test souhaité, ou signalant un test qui vous semble incorrect.
 
 ## Sécurité
 
-Vos mots de passe sont écrits en clair dans le script une fois la configuration remplie. C'est acceptable pour une VM locale de TP, mais **ne partagez jamais votre copie configurée**.
+Vos mots de passe sont écrits en clair dans `vm_testor.ini`. C'est acceptable pour une VM locale de TP, mais **ne partagez jamais ce fichier**. Il est exclu du dépôt Git par le `.gitignore` (seul le modèle `vm_testor.ini.example` y figure), et le script, lui, ne contient aucun mot de passe : vous pouvez le mettre à jour sans perdre votre configuration.

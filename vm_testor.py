@@ -1,42 +1,75 @@
 """
 Mini VM-Testor : vérifie via SSH (Windows, macOS, Linux) les manipulations de la SAE S1.03.
-Révision : 2026-11-06 révision 1
+Révision : 2026-11-06 révision 2
 
 Prérequis : paramiko (installé automatiquement au premier lancement si possible)
 Usage     : python vm_testor.py   (la VM doit être démarrée)
-Adaptation à votre VM : modifier uniquement la section Configuration.
+Configuration : fichier vm_testor.ini, copié depuis vm_testor.ini.example au premier lancement.
 """
-
-# --- Configuration : À MODIFIER selon votre VM -------------------------------
-# Connexion SSH
-HOST = "127.0.0.1"   # VirtualBox en NAT : 127.0.0.1. Mode pont ou VMware : IP de la VM (commande ip a)
-PORT = 2222          # VirtualBox en NAT : port de l'hôte redirigé vers le 22 de la VM. Sinon : 22
-CONNECT_TIMEOUT = 10  # secondes d'attente maximale pour joindre la VM
-
-# Comptes (exemple : FIRST_NAME = "mathieu", MAIN_USER = "mathieu")
-FIRST_NAME = "prenom"             # prénom imposé par l'énoncé pour le nom d'hôte et le premier compte, en minuscules
-MAIN_USER = "prenom"              # login du premier compte, celui créé à l'installation d'Ubuntu
-MAIN_PASSWORD = "CHANGEZ_MOI"     # mot de passe de ce premier compte
-FERNAND_PASSWORD = "CHANGEZ_MOI"  # mot de passe du compte fernand
-
-# Équipe
-TEAM_OF_THREE = False  # True si l'équipe compte trois membres (teste aussi le programme phare, M23)
-
-# --- Fin de la configuration -------------------------------------------------
-PLACEHOLDERS = ("prenom", "CHANGEZ_MOI") # NE PAS MODIFIER. Permet de vérifier que la configuration a été remplie.
-ACCOUNTS = {  # comptes utilisés pour se connecter, désignés par "main" et "fernand" dans les tests
-    "main": (MAIN_USER, MAIN_PASSWORD),
-    "fernand": ("fernand", FERNAND_PASSWORD),
-}
-
+import configparser
 import itertools
+import shutil
 import subprocess
 import sys
 import threading
 from pathlib import Path
 
+# --- Configuration (fichier vm_testor.ini) -----------------------------------
+SCRIPT_DIR = Path(__file__).resolve().parent
+CONFIG_FILE = SCRIPT_DIR / "vm_testor.ini"
+CONFIG_EXAMPLE = SCRIPT_DIR / "vm_testor.ini.example"
+PLACEHOLDERS = ("prenom", "CHANGEZ_MOI")
+
+
+def load_config():
+    """
+    Lit vm_testor.ini. S'il n'existe pas, le crée en copiant vm_testor.ini.example
+    et arrête le script pour laisser l'utilisateur le remplir.
+    """
+    if not CONFIG_FILE.exists():
+        if not CONFIG_EXAMPLE.exists():
+            sys.exit(f"Fichiers {CONFIG_FILE.name} et {CONFIG_EXAMPLE.name} introuvables.\n"
+                     "Téléchargez à nouveau le dossier complet du VM-Testor.")
+        shutil.copyfile(CONFIG_EXAMPLE, CONFIG_FILE)
+        sys.exit(f"Fichier de configuration créé : {CONFIG_FILE}\n"
+                 "Remplissez-le avec les informations de votre VM, puis relancez le script.")
+
+    # interpolation=None : un % dans un mot de passe ne doit pas être interprété
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.BOOLEAN_STATES = {**configparser.ConfigParser.BOOLEAN_STATES, "oui": True, "non": False}
+    try:
+        parser.read(CONFIG_FILE, encoding="utf-8")
+        config = {
+            "host": parser.get("ssh", "hote"),
+            "port": parser.getint("ssh", "port"),
+            "timeout": parser.getint("ssh", "delai"),
+            "first_name": parser.get("comptes", "prenom").lower(),
+            "user": parser.get("comptes", "login"),
+            "password": parser.get("comptes", "mot_de_passe"),
+            "fernand_password": parser.get("comptes", "mot_de_passe_fernand"),
+            "team_of_three": parser.getboolean("equipe", "trinome"),
+        }
+    except (configparser.Error, ValueError) as error:
+        sys.exit(f"Fichier {CONFIG_FILE.name} invalide : {error}\n"
+                 f"Corrigez-le, ou supprimez-le pour qu'il soit recréé au prochain lancement.")
+
+    if any(value in PLACEHOLDERS for value in config.values()):
+        sys.exit(f"Remplissez d'abord {CONFIG_FILE} "
+                 "(prénom, login et mots de passe de votre VM).")
+    return config
+
+
+CONFIG = load_config()
+HOST, PORT, CONNECT_TIMEOUT = CONFIG["host"], CONFIG["port"], CONFIG["timeout"]
+FIRST_NAME = CONFIG["first_name"]
+TEAM_OF_THREE = CONFIG["team_of_three"]
+ACCOUNTS = {  # comptes utilisés pour se connecter, désignés par "main" et "fernand" dans les tests
+    "main": (CONFIG["user"], CONFIG["password"]),
+    "fernand": ("fernand", CONFIG["fernand_password"]),
+}
+
 # --- Installation automatique de paramiko -----------------------------------
-VENV_DIR = Path(__file__).resolve().parent / ".venv-vmtestor"
+VENV_DIR = SCRIPT_DIR / ".venv-vmtestor"
 
 
 def venv_python():
@@ -147,8 +180,8 @@ REPORT_LINES = (
 
 # --- Tests -------------------------------------------------------------------
 # Chaque test : (libellé, compte utilisé pour se connecter, commande, prédicat).
-# Pour ajouter un test, il suffit d'ajouter une ligne à cette liste.
-# Normalement, vous n'avez pas besoin de modifier le code en dehors de la section Configuration.
+# Pour ajouter un test, il suffit d'ajouter une ligne à l'une des listes ci-dessous.
+# Normalement, vous n'avez pas besoin de modifier ce fichier : tout se règle dans vm_testor.ini.
 # Si j'ai oublié un test, ou fait une erreur, signalez-le-moi sur le Discord (houahoua) ou repo GitHub.
 CHECKS = [
     ("Install : nom d'hôte contient le prénom", "main", "hostname",
@@ -262,17 +295,8 @@ def run(client, command):
         return -1, f"erreur : {error or type(error).__name__}"
 
 
-def check_configuration():
-    """Arrête le script si la section Configuration n'a pas été remplie."""
-    values = (FIRST_NAME, MAIN_USER, MAIN_PASSWORD, FERNAND_PASSWORD)
-    if any(value in PLACEHOLDERS for value in values):
-        sys.exit("Remplissez d'abord la section Configuration en haut de vm_testor.py "
-                 "(prénom, login et mots de passe de votre VM).")
-
-
 def main():
     enable_ansi()
-    check_configuration()
     checks = CHECKS + (PHARE_CHECKS if TEAM_OF_THREE else []) + SCRIPT_CHECKS
     clients = {key: connect(*creds) for key, creds in ACCOUNTS.items()}
     failures = 0
