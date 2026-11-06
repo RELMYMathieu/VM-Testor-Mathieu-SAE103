@@ -1,3 +1,5 @@
 .venv-vmtestor/
 __pycache__/
 vm_testor.ini
+VMTestor.zip
+bundle.py

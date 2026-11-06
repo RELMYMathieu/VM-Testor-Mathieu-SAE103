@@ -1,6 +1,6 @@
 """
 Mini VM-Testor : vérifie via SSH (Windows, macOS, Linux) les manipulations de la SAE S1.03.
-Révision : 2026-11-06 révision 2
+Révision : 2026-11-06 révision 3
 
 Prérequis : paramiko (installé automatiquement au premier lancement si possible)
 Usage     : python vm_testor.py   (la VM doit être démarrée)
@@ -101,8 +101,7 @@ def ensure_paramiko():
 
     print("paramiko absent, installation en cours...")
     if pip_install(sys.executable):
-        import paramiko
-        return paramiko
+        sys.exit(subprocess.call([sys.executable, *sys.argv]))
 
     if sys.prefix == sys.base_prefix:  # on n'est pas déjà dans un environnement virtuel
         print("pip refusé par le système (PEP 668), création d'un environnement virtuel...")
@@ -162,7 +161,7 @@ def succeeds(code, out):
 
 
 def fails_silently(code, out):
-    return code != 0 and "terminee" not in out
+    return code > 0 and code not in (126, 127) and "terminee" not in out
 
 
 def pkg(name):
