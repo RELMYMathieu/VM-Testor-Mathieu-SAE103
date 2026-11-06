@@ -5,7 +5,7 @@ Petit script Python qui se connecte en SSH à votre machine virtuelle Ubuntu et 
 Il fonctionne sous Windows, macOS et Linux.
 
 > [!WARNING]
-> Ce script n'est **pas** le VM-Testor de l'enseignant. Il vérifie les exigences telles qu'écrites dans l'énoncé, ce qui permet de repérer un oubli avant l'évaluation, mais sans garantir la note qui sera donnée suite aux tests. Je ne suis pas responsable de la note finale ni de la validité des tests comparés à ceux que l'enseignant pourrait utiliser. Ce script est purement un outil d'auto-évaluation crée par mes soins pour une vérification rapide des étapes de la SAE S1.03. Il est à vos risques et périls, et ne **remplace pas** la lecture attentive de l'énoncé ni la vérification manuelle des points non testables automatiquement de votre VM.
+> Ce script n'est **pas** le VM-Testor de l'enseignant. Il vérifie les exigences telles qu'écrites dans l'énoncé, ce qui permet de repérer un oubli avant l'évaluation, mais sans garantir la note qui sera donnée suite aux tests. Je ne suis pas responsable de la note finale ni de la validité des tests comparés à ceux que l'enseignant pourrait utiliser. Ce script est purement un outil d'auto-évaluation créé par mes soins pour une vérification rapide des étapes de la SAE S1.03. Il est à vos risques et périls, et ne **remplace pas** la lecture attentive de l'énoncé ni la vérification manuelle des points non testables automatiquement de votre VM.
 
 ## Prérequis
 
@@ -17,15 +17,16 @@ La bibliothèque `paramiko` est installée automatiquement au premier lancement 
 
 ## Utilisation
 
-1. Lancez une première fois le script :
+1. Créez votre fichier de configuration `vm_testor.ini`, au choix :
 
-   ```
-   python vm_testor.py
-   ```
+   - copiez `vm_testor.ini.example`, puis renommez la copie en `vm_testor.ini` (gardez le modèle, il sert à repartir de zéro) ;
+   - ou lancez une première fois le script, qui fait la copie pour vous puis s'arrête :
 
-   (sous macOS et Linux, la commande est souvent `python3`)
+     ```shell
+     python vm_testor.py
+     ```
 
-   Il crée votre fichier `vm_testor.ini` en copiant le modèle `vm_testor.ini.example`, puis s'arrête. (Vous pouvez aussi faire cette copie vous-même.)
+     (sous macOS et Linux, la commande est souvent `python3`)
 
 2. Ouvrez `vm_testor.ini` avec un éditeur de texte et remplissez-le. Chaque valeur y est expliquée en commentaire. Par exemple, pour une VM VirtualBox en NAT dont le premier compte est `mathieu` :
 
@@ -46,7 +47,7 @@ La bibliothèque `paramiko` est installée automatiquement au premier lancement 
    ```
 
    | Clé | Rôle |
-   |---|---|
+   | --- | --- |
    | `hote`, `port` | Adresse et port SSH de la VM (voir « Connexion SSH à la VM ») |
    | `delai` | Délai maximal de connexion, en secondes |
    | `prenom` | Le prénom imposé par l'énoncé |
@@ -57,9 +58,9 @@ La bibliothèque `paramiko` est installée automatiquement au premier lancement 
 
    Tant que les valeurs d'exemple (`prenom`, `CHANGEZ_MOI`) ne sont pas remplacées, le script refuse de se lancer et vous le rappelle.
 
-3. Relancez le script :
+3. Lancez le script :
 
-   ```
+   ```shell
    python vm_testor.py
    ```
 
@@ -73,7 +74,7 @@ Chaque test affiche `[OK]` ou `[KO]`. En cas d'échec, la sortie obtenue est aff
 ## Ce que le script vérifie
 
 | Partie | Vérifications |
-|---|---|
+| --- | --- |
 | Installation | Prénom dans le nom d'hôte, premier compte, serveur OpenSSH |
 | Comptes (M1 à M9) | Groupes `developpeurs` et `xrk9`, compte `fernand`, propriétaires des répertoires, politique de mot de passe |
 | Logiciels (M10 à M15) | `sl`, mises à jour, `cowsay`, `chucknorris` |
@@ -91,7 +92,7 @@ Le script se contente de lire, à une exception près : il relance `rapport.sh`,
 ## Dépannage
 
 | Problème | Solution |
-|---|---|
+| --- | --- |
 | « VM injoignable » | Vérifiez que la VM est démarrée, puis `hote`, `port` et la redirection de port |
 | « Remplissez d'abord vm_testor.ini » | Remplacez les valeurs `prenom` et `CHANGEZ_MOI` par les vôtres |
 | « Fichier vm_testor.ini invalide » | Corrigez la valeur indiquée, ou supprimez le fichier pour qu'il soit recréé |
