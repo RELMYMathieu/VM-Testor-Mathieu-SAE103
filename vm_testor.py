@@ -6,6 +6,29 @@ Prérequis : paramiko (installé automatiquement au premier lancement si possibl
 Usage     : python vm_testor.py   (la VM doit être démarrée)
 Adaptation à votre VM : modifier uniquement la section Configuration.
 """
+
+# --- Configuration : À MODIFIER selon votre VM -------------------------------
+# Connexion SSH
+HOST = "127.0.0.1"   # VirtualBox en NAT : 127.0.0.1. Mode pont ou VMware : IP de la VM (commande ip a)
+PORT = 2222          # VirtualBox en NAT : port de l'hôte redirigé vers le 22 de la VM. Sinon : 22
+CONNECT_TIMEOUT = 10  # secondes d'attente maximale pour joindre la VM
+
+# Comptes (exemple : FIRST_NAME = "mathieu", MAIN_USER = "mathieu")
+FIRST_NAME = "prenom"             # prénom imposé par l'énoncé pour le nom d'hôte et le premier compte, en minuscules
+MAIN_USER = "prenom"              # login du premier compte, celui créé à l'installation d'Ubuntu
+MAIN_PASSWORD = "CHANGEZ_MOI"     # mot de passe de ce premier compte
+FERNAND_PASSWORD = "CHANGEZ_MOI"  # mot de passe du compte fernand
+
+# Équipe
+TEAM_OF_THREE = False  # True si l'équipe compte trois membres (teste aussi le programme phare, M23)
+
+# --- Fin de la configuration -------------------------------------------------
+PLACEHOLDERS = ("prenom", "CHANGEZ_MOI") # NE PAS MODIFIER. Permet de vérifier que la configuration a été remplie.
+ACCOUNTS = {  # comptes utilisés pour se connecter, désignés par "main" et "fernand" dans les tests
+    "main": (MAIN_USER, MAIN_PASSWORD),
+    "fernand": ("fernand", FERNAND_PASSWORD),
+}
+
 import itertools
 import subprocess
 import sys
@@ -85,18 +108,6 @@ def color(text, code):
     return f"{code}{text}{RESET}"
 
 
-# --- Configuration ----------------------------------------------------------
-HOST = "127.0.0.1"  # 127.0.0.1 + port redirigé en NAT, ou IP de la VM en mode bridged adapter (dépend de votre config hyperviseur)
-PORT = 2222 # de base il serait 22. Si vous utilisez VirtualBox avec le NAT par défaut, on redirige le port 2222 de l'hôte vers le port 22 de la VM
-CONNECT_TIMEOUT = 10  # secondes d'attente maximale pour joindre la VM
-FIRST_NAME = "mathieu"  # prénom exigé dans le nom d'hôte et le premier login (d'après le doc de la SAE S1.03)
-ACCOUNTS = {  # (login, mot de passe)
-    "main": ("USERDEBASE", "MDP"), # MODIFIER CELA avec le login & mdp principal de votre VM (ex. "mathieu", "mathieumdp")
-    "fernand": ("fernand", "fernand"), # login et mdp de fernand, modifiez le mdp si il est différent de "fernand"
-}
-TEAM_OF_THREE = True  # True pour tester aussi le programme phare (M23); peut être désactivé si vous êtes seulement deux dans l'équipe avec le flag False
-
-
 # --- Prédicats ---------------------------------------------------------------
 # Un prédicat reçoit (code de retour, sortie) d'une commande et renvoie True si
 # le test est réussi. equals("3000") fabrique par exemple un prédicat qui
@@ -138,7 +149,7 @@ REPORT_LINES = (
 # Chaque test : (libellé, compte utilisé pour se connecter, commande, prédicat).
 # Pour ajouter un test, il suffit d'ajouter une ligne à cette liste.
 # Normalement, vous n'avez pas besoin de modifier le code en dehors de la section Configuration.
-# Si j'ai oublié un test, ou fait une erreur, sigialez-moi sur le Discord (houahoua) ou repo GitHub.
+# Si j'ai oublié un test, ou fait une erreur, signalez-le-moi sur le Discord (houahoua) ou repo GitHub.
 CHECKS = [
     ("Install : nom d'hôte contient le prénom", "main", "hostname",
      lambda code, out: FIRST_NAME in out.lower()),
@@ -251,8 +262,17 @@ def run(client, command):
         return -1, f"erreur : {error or type(error).__name__}"
 
 
+def check_configuration():
+    """Arrête le script si la section Configuration n'a pas été remplie."""
+    values = (FIRST_NAME, MAIN_USER, MAIN_PASSWORD, FERNAND_PASSWORD)
+    if any(value in PLACEHOLDERS for value in values):
+        sys.exit("Remplissez d'abord la section Configuration en haut de vm_testor.py "
+                 "(prénom, login et mots de passe de votre VM).")
+
+
 def main():
     enable_ansi()
+    check_configuration()
     checks = CHECKS + (PHARE_CHECKS if TEAM_OF_THREE else []) + SCRIPT_CHECKS
     clients = {key: connect(*creds) for key, creds in ACCOUNTS.items()}
     failures = 0
