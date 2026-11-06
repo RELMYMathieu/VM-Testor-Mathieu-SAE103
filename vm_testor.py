@@ -174,7 +174,7 @@ INSTALLED = equals("install ok installed")
 
 REPORT_LINES = (
     "RAPPORT SYSTEME", "Réalisé le", "Par fernand", "Nom de la machine :",
-    "Adresse IP :", "Version du noyau Linux :", "Nombre de paquets installes :",
+    "Adresse IP :", "Nombre de paquets installes :",
     "Nombre de comptes :", "- fernand (uid: 3001)", "Occupation du disque :",
 )
 
