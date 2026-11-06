@@ -1,5 +1,7 @@
 .venv-vmtestor/
 __pycache__/
 vm_testor.ini
-VMTestor.zip
-bundle.py
+
+# outils locaux
+release.ps1
+dist/
